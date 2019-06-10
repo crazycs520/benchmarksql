@@ -194,7 +194,7 @@ public class jTPCCConnection
 	    case jTPCCConfig.DB_POSTGRES:
 	    case jTPCCConfig.DB_MYSQL:
 		stmtStockLevelSelectLow = dbConn.prepareStatement(
-		    "SELECT count(*) AS low_stock FROM (" +
+		    "SELECT /*+ TIDB_INLJ(bmsql_order_line) */ count(*) AS low_stock FROM (" +
 		    "    SELECT s_w_id, s_i_id, s_quantity " +
 		    "        FROM bmsql_stock " +
 		    "        WHERE s_w_id = ? AND s_quantity < ? AND s_i_id IN (" +
@@ -228,13 +228,11 @@ public class jTPCCConnection
 	}
 
 	// PreparedStatements for DELIVERY_BG
-    stmtDeliveryBGSelectOldestNewOrder = dbConn.prepareStatement(
-        "SELECT no_o_id " +
-        "    FROM bmsql_new_order " +
-        "    WHERE no_w_id = ? AND no_d_id = ? " +
-        "    ORDER BY no_o_id ASC" +
-        "    LIMIT 1" +
-        "    FOR UPDATE");
+	stmtDeliveryBGSelectOldestNewOrder = dbConn.prepareStatement(
+		"SELECT no_o_id " +
+		"    FROM bmsql_new_order " +
+		"    WHERE no_w_id = ? AND no_d_id = ? " +
+		"    ORDER BY no_o_id ASC");
 	stmtDeliveryBGDeleteOldestNewOrder = dbConn.prepareStatement(
 		"DELETE FROM bmsql_new_order " +
 		"    WHERE no_w_id = ? AND no_d_id = ? AND no_o_id = ?");
@@ -270,7 +268,11 @@ public class jTPCCConnection
     public void commit()
 	throws SQLException
     {
-	dbConn.commit();
+    	try {
+			dbConn.commit();
+		} catch(SQLException e) {
+    		throw new CommitException();
+		}
     }
 
     public void rollback()
