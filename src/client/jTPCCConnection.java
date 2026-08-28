@@ -270,10 +270,10 @@ public class jTPCCConnection
     public void commit()
 	throws SQLException
     {
-    	try {
+	try {
 			dbConn.commit();
 		} catch(SQLException e) {
-    		throw new CommitException();
+		throw new CommitException();
 		}
     }
 
